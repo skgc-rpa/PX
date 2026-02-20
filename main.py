@@ -139,8 +139,9 @@ df_url = pd.Series(urls).to_frame(name='URL')
 # =========================================================
 # 5. Login
 # =========================================================
-USERNAME = "SKGlobalKorea"
-PASSWORD = "Sk15001657"
+# GitHub Secrets에서 환경변수로 CCF 계정 정보를 가져옵니다.
+USERNAME = os.environ.get("CCF_USER")
+PASSWORD = os.environ.get("CCF_PASSWORD")
 
 login_data = {
     'custlogin': '1',
