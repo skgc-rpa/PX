@@ -53,14 +53,13 @@ def login_ccfgroup(session, headers, login_data):
 # =========================================================
 # 3. Daily / Weekly Finder (lxml 파서 적용)
 # =========================================================
-today = datetime.today().date()
+today_date = datetime.today().date()
 offset_days = 1
-target_date = today - timedelta(days=offset_days)
+target_date = today_date - timedelta(days=offset_days)
 
 def find_market_daily(list_url: str, title_prefix: str):
     resp = session.get(list_url, headers=headers, timeout=30)
     resp.raise_for_status()
-    # lxml 파서로 교체하여 파싱 속도 향상
     soup = BeautifulSoup(resp.text, "lxml")
     candidates = []
 
@@ -95,7 +94,6 @@ def find_market_weekly(list_url: str, title_prefix: str):
 # =========================================================
 # 4. URL Extract (멀티스레딩 병렬 처리)
 # =========================================================
-# 대상 URL 매핑 딕셔너리 구성
 url_tasks = {
     "pta_daily": ("daily", "https://www.ccfgroup.com/newscenter/index.php?Class_ID=100000&subclassid=100000&Prod_ID=100001", "PTA market daily"),
     "meg_daily": ("daily", "https://www.ccfgroup.com/newscenter/index.php?Class_ID=100000&subclassid=100000&Prod_ID=100002", "MEG market daily"),
@@ -108,7 +106,6 @@ url_tasks = {
 }
 
 urls = {}
-# 서버 IP 차단 방지를 위해 최대 스레드 4개로 제한
 with ThreadPoolExecutor(max_workers=4) as executor:
     futures = {}
     for name, (type_, link, prefix) in url_tasks.items():
@@ -121,7 +118,6 @@ with ThreadPoolExecutor(max_workers=4) as executor:
         name = futures[future]
         urls[name] = future.result()
 
-# 기존 로직 하위 호환을 위해 변수 할당
 pta_daily = urls.get("pta_daily")
 meg_daily = urls.get("meg_daily")
 yarn_daily = urls.get("yarn_daily")
@@ -137,9 +133,8 @@ for k, v in urls.items():
 df_url = pd.Series(urls).to_frame(name='URL')
 
 # =========================================================
-# 5. Login
+# 5. Login (GitHub Secrets 환경변수 적용)
 # =========================================================
-# GitHub Secrets에서 환경변수로 CCF 계정 정보를 가져옵니다.
 USERNAME = os.environ.get("CCF_USER")
 PASSWORD = os.environ.get("CCF_PASSWORD")
 
@@ -155,14 +150,13 @@ session = login_ccfgroup(session, headers, login_data)
 print("✅ 로그인 완료 (session 유지됨)")
 
 # =========================================================
-# 6. 테이블 및 텍스트 데이터 추출 (lxml 강제 적용)
+# 6. 테이블 및 텍스트 데이터 추출 
 # =========================================================
 def fetch_tables_as_df(session, url, headers):
     if not url: return []
     resp = session.get(url, headers=headers, timeout=30)
     resp.raise_for_status()
     html_file_like = StringIO(resp.text)
-    # lxml 엔진을 사용하여 DataFrame 변환 속도 극대화
     return pd.read_html(html_file_like, flavor='lxml')
 
 def fetch_average_from_text(session, url, headers, start_marker, end_marker):
@@ -183,7 +177,6 @@ def fetch_average_from_text(session, url, headers, start_marker, end_marker):
 # =========================================================
 # 8. 데이터 추출 (멀티스레딩 병렬 처리)
 # =========================================================
-# 추출할 데이터 작업 리스트
 fetch_tasks = {
     "pta_daily": pta_daily, "meg_daily": meg_daily, "yarn_daily": yarn_daily,
     "fiber_daily": fiber_daily, "bottle_daily": bottle_daily,
@@ -194,20 +187,16 @@ extracted_dfs = {}
 yarn_avg = None
 
 with ThreadPoolExecutor(max_workers=4) as executor:
-    # 1. 테이블 추출 작업 할당
     future_to_name = {executor.submit(fetch_tables_as_df, session, url, headers): name 
                       for name, url in fetch_tasks.items()}
-    # 2. 텍스트 추출 작업 할당
     future_yarn_avg = executor.submit(fetch_average_from_text, session, yarn_daily, headers, 'assessed to ', ' near')
     
-    # 완료된 순서대로 결과 회수
     for future in as_completed(future_to_name):
         name = future_to_name[future]
         extracted_dfs[name] = future.result()
         
     yarn_avg = future_yarn_avg.result()
 
-# 기존 로직 하위 호환을 위해 변수 재할당
 df_pta_daily = extracted_dfs.get("pta_daily", [])
 df_meg_daily = extracted_dfs.get("meg_daily", [])
 df_yarn_daily = extracted_dfs.get("yarn_daily", [])
@@ -220,7 +209,7 @@ df_fiber_weekly = extracted_dfs.get("fiber_weekly", [])
 print("✅ 본문 테이블 및 텍스트 데이터 병렬 수집 완료")
 
 # =========================================================
-# 9. 데이터프레임 처리 (기존 코드 완벽하게 동일)
+# 9. 데이터프레임 처리 
 # =========================================================
 df_pta_daily_f = df_pta_daily[2].iloc[:4,:-1].reset_index(drop=True).pipe(lambda d: d.rename(columns=d.iloc[0]).drop(d.index[0]).reset_index(drop=True))
 df_meg_daily_f = df_meg_daily[2].iloc[:-1,:].reset_index(drop=True).pipe(lambda d: d.rename(columns=d.iloc[0]).drop(d.index[0]).reset_index(drop=True))
@@ -309,8 +298,8 @@ data_map_px_2 = {
 df_px_result['Date'] = df_px_result.index.map(data_map_px_2)
 df_px_result['Value'] = df_px_result['Value'].astype(float).round(1)
 
-today = datetime.now().strftime('%Y-%m-%d')
-file_name = f"px_result_{today}.xlsx"
+today_str = datetime.now().strftime('%Y-%m-%d')
+file_name = f"px_result_{today_str}.xlsx"
 
 targets = {"px_result": df_px_result, "px_margin": df_px_margin, 
            "px_margin_backdata": df_px_margin_backdata, "url": df_url}
@@ -328,7 +317,7 @@ with pd.ExcelWriter(file_name, engine='xlsxwriter') as writer:
         rows, cols = df.shape
         worksheet.conditional_format(0, 0, rows, cols, {
             'type': 'formula',
-            'criteria': '=1',  # 무조건 참이 되도록 설정하여 빈 칸 포함 전체 영역에 테두리 적용
+            'criteria': '=1',
             'format': border_format
         })
         
@@ -350,15 +339,19 @@ print(f"✅ '{file_name}' 저장 완료!")
 # =========================================================
 print("=== 메일 발송 준비 ===")
 
-# GitHub Secrets에서 환경변수로 주입받을 이메일 계정 정보
 sender_email = os.environ.get("GMAIL_USER")
 app_password = os.environ.get("GMAIL_APP_PASSWORD")
-receiver_email = "jp_lee@sk.com"
+
+# 수신처(To)와 참조처(Cc) 설정 
+# to_emails = "jp_lee@sk.com"
+# cc_emails = "cr7@sk.com, lee8213@sk.com"
+to_emails = "jp_lee@sk.com"
+cc_emails = "jp_lee@sk.com"
 
 # 메일 제목 (yyyy-mm-dd 형식)
-subject = f"PX CCF {today}"
+subject = f"PX CCF {today_str}"
 
-# 본문 데이터프레임을 HTML 표로 변환 (엑셀 서식인 테두리와 중앙 정렬, 음영을 CSS로 구현)
+# 본문 데이터프레임을 HTML 표로 변환
 html_table = df_px_result.to_html(border=0, justify='center', index=True)
 html_body = f"""
 <html>
@@ -394,7 +387,8 @@ html_body = f"""
 msg = EmailMessage()
 msg['Subject'] = subject
 msg['From'] = sender_email
-msg['To'] = receiver_email
+msg['To'] = to_emails    # 수신처 변수 할당
+msg['Cc'] = cc_emails    # 참조처 변수 할당
 msg.set_content("HTML 뷰어를 지원하는 메일 클라이언트를 사용해 주세요.") # Fallback 텍스트
 msg.add_alternative(html_body, subtype='html')
 
