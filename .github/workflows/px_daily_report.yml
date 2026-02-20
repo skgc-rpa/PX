@@ -31,3 +31,5 @@ jobs:
         env:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          CCF_USER: ${{ secrets.CCF_USER }}
+          CCF_PASSWORD: ${{ secrets.CCF_PASSWORD }}
