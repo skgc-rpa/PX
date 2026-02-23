@@ -355,33 +355,27 @@ subject = f"PX CCF {today_str}"
 html_table = df_px_result.to_html(border=0, justify='center', index=True)
 html_body = f"""
 <html>
-<body style="margin:0; padding:0; 
-             font-family:Calibri, 'Segoe UI', Arial, sans-serif; 
-             font-size:14px; color:#000000;">
+<body style="margin:0; padding:0;">
 
     <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-            <td align="left" style="padding:20px;">
+            <td style="padding:20px;
+                       font-family:Calibri, Arial, sans-serif;
+                       font-size:14px;
+                       color:#000000;">
 
-                <p style="margin:0 0 10px 0;">
-                    안녕하세요,
-                </p>
+                안녕하세요,<br><br>
 
-                <p style="margin:0 0 20px 0;">
-                    오늘자 CCF 추출 결과입니다. 상세 내용은 첨부파일을 확인해 주시기 바랍니다.
-                </p>
+                오늘자 CCF 추출 결과입니다.
+                상세 내용은 첨부파일을 확인해 주시기 바랍니다.<br><br>
 
                 <table border="1" cellpadding="5" cellspacing="0"
                        style="border-collapse:collapse;
                               text-align:center;
-                              font-family:Calibri, 'Segoe UI', Arial, sans-serif;
+                              font-family:Calibri, Arial, sans-serif;
                               font-size:13px;">
 
-                    <tr style="background-color:#BCD1E4; font-weight:bold;">
-                        {table_header}
-                    </tr>
-
-                    {table_rows}
+                    {html_table}
 
                 </table>
 
