@@ -3,7 +3,7 @@ name: Daily CCF Report Automation
 on:
   schedule:
     # KST 오전 10시 = UTC 오전 1시 / 평일(월~금, 1-5)에만 실행
-    - cron: '43 5 * * 1-5'
+    - cron: '07 6 * * 1-5'
   workflow_dispatch: # 버튼 클릭으로 수동 실행이 가능하도록 유지
 
 jobs:
