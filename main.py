@@ -344,9 +344,9 @@ app_password = os.environ.get("GMAIL_APP_PASSWORD")
 
 # 수신처(To)와 참조처(Cc) 설정 
 # to_emails = "jp_lee@sk.com"
-# cc_emails = "cr7@sk.com, lee8213@sk.com"
-to_emails = "jp_lee@sk.com"
-cc_emails = "jp_lee@sk.com"
+# cc_emails = "cr7@sk.com"
+to_emails = "michael.park@sk.com, hyo548@sk.com"
+cc_emails = "carly1206@sk.com, rchangjo@sk.com, cr7@sk.com, jp_lee@sk.com"
 
 # 메일 제목 (yyyy-mm-dd 형식)
 subject = f"PX CCF {today_str}"
