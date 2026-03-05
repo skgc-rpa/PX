@@ -296,7 +296,7 @@ data_map_px_2 = {
     "Bottle Chip": ""
 }
 df_px_result['Date'] = df_px_result.index.map(data_map_px_2)
-df_px_result['Value'] = df_px_result['Value'].astype(float).round(1)
+df_px_result['Value'] = df_px_result['Value'].astype(float).round(2)
 
 today_str = datetime.now().strftime('%Y-%m-%d')
 file_name = f"px_result_{today_str}.xlsx"
@@ -343,16 +343,23 @@ sender_email = os.environ.get("GMAIL_USER")
 app_password = os.environ.get("GMAIL_APP_PASSWORD")
 
 # 수신처(To)와 참조처(Cc) 설정 
-# to_emails = "jp_lee@sk.com"
-# cc_emails = "cr7@sk.com"
-to_emails = "michael.park@sk.com, hyo548@sk.com"
-cc_emails = "carly1206@sk.com, rchangjo@sk.com, cr7@sk.com, jp_lee@sk.com"
+to_emails = "jp_lee@sk.com"
+cc_emails = "jp_lee@sk.com"
+# to_emails = "michael.park@sk.com, jsoh@sk.com, hoseok@sk.com, hyo548@sk.com"
+# cc_emails = "carly1206@sk.com, rchangjo@sk.com, cr7@sk.com, jp_lee@sk.com"
 
 # 메일 제목 (yyyy-mm-dd 형식)
 subject = f"PX CCF {today_str}"
 
-# 본문 데이터프레임을 HTML 표로 변환
-html_table = df_px_result.to_html(border=0, justify='center', index=True)
+# 1. 데이터프레임을 HTML 표로 변환
+html_table = df_px_result.to_html(justify='center', index=True)
+
+# 2. Pandas가 자동 생성한 table 태그를 원하는 인라인 스타일이 적용된 태그로 교체
+# (이메일 클라이언트는 외부 CSS나 style 태그보다 인라인 스타일을 더 잘 인식합니다)
+custom_table_tag = '<table border="1" cellpadding="5" cellspacing="0" style="border-collapse:collapse; text-align:center; font-family:Calibri, Arial, sans-serif; font-size:13px;">'
+html_table = html_table.replace('<table border="1" class="dataframe">', custom_table_tag)
+
+# 3. HTML 이메일 본문 생성
 html_body = f"""
 <html>
 <body style="margin:0; padding:0;">
@@ -366,18 +373,10 @@ html_body = f"""
 
                 안녕하세요,<br><br>
 
-                오늘자 CCF 추출 결과입니다.
+                오늘자 CCF 추출 결과입니다.<br>
                 상세 내용은 첨부파일을 확인해 주시기 바랍니다.<br><br>
 
-                <table border="1" cellpadding="5" cellspacing="0"
-                       style="border-collapse:collapse;
-                              text-align:center;
-                              font-family:Calibri, Arial, sans-serif;
-                              font-size:13px;">
-
-                    {html_table}
-
-                </table>
+                {html_table}
 
             </td>
         </tr>
