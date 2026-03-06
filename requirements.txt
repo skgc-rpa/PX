@@ -4,3 +4,5 @@ pandas
 beautifulsoup4
 lxml
 xlsxwriter
+xlrd>=2.0.1
+openpyxl
