@@ -211,15 +211,15 @@ print("✅ 본문 테이블 및 텍스트 데이터 병렬 수집 완료")
 # =========================================================
 # 9. 데이터프레임 처리 
 # =========================================================
-df_pta_daily_f = df_pta_daily[2].iloc[:4,:-1].reset_index(drop=True).pipe(lambda d: d.rename(columns=d.iloc[0]).drop(d.index[0]).reset_index(drop=True))
-df_meg_daily_f = df_meg_daily[2].iloc[:-1,:].reset_index(drop=True).pipe(lambda d: d.rename(columns=d.iloc[0]).drop(d.index[0]).reset_index(drop=True))
-df_yarn_daily_f = df_yarn_daily[2].iloc[:-1,:].reset_index(drop=True).pipe(lambda d: d.rename(columns=d.iloc[0]).drop(d.index[0]).reset_index(drop=True))
-df_fiber_daily_f = df_fiber_daily[2].iloc[:-1,:].reset_index(drop=True).pipe(lambda d: d.rename(columns=d.iloc[0]).drop(d.index[0]).reset_index(drop=True))
-df_bottle_daily_f = df_bottle_daily[2].iloc[:-1,:].reset_index(drop=True).pipe(lambda d: d.rename(columns=d.iloc[0]).drop(d.index[0]).reset_index(drop=True))
+df_pta_daily_f = df_pta_daily[1].iloc[:4,:-1].reset_index(drop=True).pipe(lambda d: d.rename(columns=d.iloc[0]).drop(d.index[0]).reset_index(drop=True))
+df_meg_daily_f = df_meg_daily[1].iloc[:-1,:].reset_index(drop=True).pipe(lambda d: d.rename(columns=d.iloc[0]).drop(d.index[0]).reset_index(drop=True))
+df_yarn_daily_f = df_yarn_daily[1].iloc[:-1,:].reset_index(drop=True).pipe(lambda d: d.rename(columns=d.iloc[0]).drop(d.index[0]).reset_index(drop=True))
+df_fiber_daily_f = df_fiber_daily[1].iloc[:-1,:].reset_index(drop=True).pipe(lambda d: d.rename(columns=d.iloc[0]).drop(d.index[0]).reset_index(drop=True))
+df_bottle_daily_f = df_bottle_daily[1].iloc[:-1,:].reset_index(drop=True).pipe(lambda d: d.rename(columns=d.iloc[0]).drop(d.index[0]).reset_index(drop=True))
 
-df_px_weekly_f = df_px_weekly[2].iloc[(df_px_weekly[2][0].str.contains('operating', case=False, na=False).idxmax())+1:df_px_weekly[2][0].str.contains('imports', case=False, na=False).idxmax()].T.drop_duplicates(keep='first').T.reset_index(drop=True).pipe(lambda d: d.set_axis(d.iloc[0], axis=1).iloc[1:]).reset_index(drop=True).pipe(lambda df: df.rename(columns={df.columns[0]: 'Operating rate'}))
-df_yarn_weekly_f = df_yarn_weekly[8].T.drop_duplicates(keep='first').T.pipe(lambda df: df.set_axis(df.iloc[0], axis=1)).iloc[1:].reset_index(drop=True)
-df_fiber_weekly_f = df_fiber_weekly[7].iloc[1:, :].T.drop_duplicates(keep='first').T.pipe(lambda df: df.set_axis(df.iloc[0], axis=1)).iloc[1:].reset_index(drop=True).pipe(lambda df: df.rename(columns={df.columns[0]: 'Index'}))
+df_px_weekly_f = df_px_weekly[3].iloc[1:].T.drop_duplicates(keep='first').T.pipe(lambda d: d.set_axis(d.iloc[0], axis=1).iloc[1:]).reset_index(drop=True).rename(columns={None: 'Operating rate', 'NaN': 'Operating rate'}).rename(columns=lambda x: 'Operating rate' if pd.isna(x) or x == 'nan' else x)
+df_yarn_weekly_f = df_yarn_weekly[3].T.drop_duplicates(keep='first').T.pipe(lambda df: df.set_axis(df.iloc[0], axis=1)).iloc[1:].reset_index(drop=True)
+df_fiber_weekly_f = df_fiber_weekly[2].iloc[1:, :].T.drop_duplicates(keep='first').T.pipe(lambda df: df.set_axis(df.iloc[0], axis=1)).iloc[1:].reset_index(drop=True).pipe(lambda df: df.rename(columns={df.columns[0]: 'Index'}))
 
 # 1. Margin Backdata
 data_map_margin_backdata_1 = {
@@ -233,13 +233,13 @@ data_map_margin_backdata_1 = {
 }
 df_px_margin_backdata = pd.Series(data_map_margin_backdata_1).to_frame(name='Value')
 data_map_margin_backdata_2 = {
-    "RMB | by cash, ex-CMP (yuan/mt)": df_pta_daily[3].iloc[1, 0].split('(')[1].split(')')[0],
-    "Spot, East China": df_meg_daily[3].iloc[1, 0].split('(')[1].split(')')[0],
+    "RMB | by cash, ex-CMP (yuan/mt)": df_pta_daily[0].iloc[0, 0].split('(')[1].split(')')[0],
+    "Spot, East China": df_meg_daily[0].iloc[0, 0].split('(')[1].split(')')[0],
     "SD POY white | 150D/48F": df_yarn_daily_f.columns[4],
     "SD FDY white | 150D/96F": df_yarn_daily_f.columns[4],
     "SD DTY large companies white | 150D/48F,   non-intermingled": df_yarn_daily_f.columns[4],
-    "Virgin   PSF 1.4D*38mm | Daily average(yuan/mt by cash ex-works)": df_fiber_daily[3].iloc[1, 0].split('(')[1].split(')')[0],
-    "PET water/hot fill bottle chip, by cash EXW": df_bottle_daily[3].iloc[1, 0].split('(')[1].split(')')[0],
+    "Virgin   PSF 1.4D*38mm | Daily average(yuan/mt by cash ex-works)": df_fiber_daily[0].iloc[0, 0].split('(')[1].split(')')[0],
+    "PET water/hot fill bottle chip, by cash EXW": df_bottle_daily[0].iloc[0, 0].split('(')[1].split(')')[0],
 }
 df_px_margin_backdata['Date'] = df_px_margin_backdata.index.map(data_map_margin_backdata_2)
 df_px_margin_backdata['Value'] = df_px_margin_backdata['Value'].astype(float)
