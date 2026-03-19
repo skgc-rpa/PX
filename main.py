@@ -158,22 +158,41 @@ def fetch_tables_as_df(session, url, headers):
     resp.raise_for_status()
     html_file_like = StringIO(resp.text)
     return pd.read_html(html_file_like, flavor='lxml')
-
+    
 def fetch_average_from_text(session, url, headers, start_marker, end_marker):
     if not url: return None
-    resp = session.get(url, headers=headers, timeout=30)
-    resp.raise_for_status()
-    soup = BeautifulSoup(resp.text, 'lxml')
-    content = soup.find('div', id='fontzoom')
-    if not content: return None
-    text = content.get_text(separator='\n', strip=True)
     try:
-        target_part = text.split(start_marker)[1].rsplit(end_marker, 1)[0]
-        nums = [int(n) for n in re.findall(r'\d+', target_part)]
-        return sum(nums) / len(nums) if nums else None
-    except (IndexError, ValueError):
+        resp = session.get(url, headers=headers, timeout=30)
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, 'lxml')
+        content = soup.find('div', id='fontzoom')
+        if not content: return None
+        text = content.get_text(separator=' ', strip=True)
+
+        # 1. 새로운 패턴 처리 (우선순위 1)
+        # "sales ratio was averaged at 46%"
+        new_pattern = re.search(r'sales ratio was averaged at\s*(\d+\.?\d*)%', text, re.IGNORECASE)
+        if new_pattern:
+            return float(new_pattern.group(1))
+
+        # 2. 기존 패턴 처리 (우선순위 2)
+        # "assessed to [숫자] near [시간]"
+        # re.escape를 사용하여 start_marker/end_marker에 특수문자가 있어도 안전하게 처리
+        pattern = re.escape(start_marker) + r'(.*?)' + re.escape(end_marker)
+        old_pattern = re.search(pattern, text, re.IGNORECASE)
+        
+        if old_pattern:
+            target_part = old_pattern.group(1)
+            # 숫자(소수점 포함) 모두 추출
+            nums = [float(n) for n in re.findall(r'\d+\.?\d*', target_part)]
+            return sum(nums) / len(nums) if nums else None
+
         return None
 
+    except Exception as e:
+        print(f"Error fetching average: {e}")
+        return None
+        
 # =========================================================
 # 8. 데이터 추출 (멀티스레딩 병렬 처리)
 # =========================================================
