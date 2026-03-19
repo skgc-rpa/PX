@@ -162,34 +162,37 @@ def fetch_tables_as_df(session, url, headers):
 def fetch_average_from_text(session, url, headers, start_marker, end_marker):
     if not url: return None
     try:
+        # 웹 페이지 요청
         resp = session.get(url, headers=headers, timeout=30)
         resp.raise_for_status()
+        
         soup = BeautifulSoup(resp.text, 'lxml')
         content = soup.find('div', id='fontzoom')
         if not content: return None
-        text = content.get_text(separator=' ', strip=True)
-
-        # 1. 새로운 패턴 처리 (우선순위 1)
-        # "sales ratio was averaged at 46%"
-        new_pattern = re.search(r'sales ratio was averaged at\s*(\d+\.?\d*)%', text, re.IGNORECASE)
-        if new_pattern:
-            return float(new_pattern.group(1))
-
-        # 2. 기존 패턴 처리 (우선순위 2)
-        # "assessed to [숫자] near [시간]"
-        # re.escape를 사용하여 start_marker/end_marker에 특수문자가 있어도 안전하게 처리
-        pattern = re.escape(start_marker) + r'(.*?)' + re.escape(end_marker)
-        old_pattern = re.search(pattern, text, re.IGNORECASE)
         
-        if old_pattern:
-            target_part = old_pattern.group(1)
-            # 숫자(소수점 포함) 모두 추출
+        # 텍스트 추출 (줄바꿈을 공백으로 변환하여 연속된 문장으로 처리)
+        text = content.get_text(separator=' ', strip=True)
+        
+        # 정규표현식 구성:
+        # start_marker(assessed to) 뒤에 공백이 0개 이상(\s*) 올 수 있게 설정
+        # (.*?)는 숫자 부분을 캡처
+        # end_marker(near) 앞에 공백이 0개 이상(\s*) 올 수 있게 설정
+        pattern = re.escape(start_marker.strip()) + r'\s*(.*?)\s*' + re.escape(end_marker.strip())
+        
+        match = re.search(pattern, text, re.IGNORECASE)
+        
+        if match:
+            target_part = match.group(1)
+            # 소수점을 포함한 모든 숫자 추출 (예: 10-20% -> 10.0, 20.0)
             nums = [float(n) for n in re.findall(r'\d+\.?\d*', target_part)]
+            
+            # 숫자 리스트의 평균 반환
             return sum(nums) / len(nums) if nums else None
 
         return None
 
     except Exception as e:
+        # 에러 발생 시 로그를 남기고 None을 반환하여 전체 프로세스 중단 방지
         print(f"Error fetching average: {e}")
         return None
         
